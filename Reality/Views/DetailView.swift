@@ -87,7 +87,7 @@ struct DetailView: View {
         if let tag = item.BackdropImageTags?.first {
             return EmbyClient.shared.imageURL(itemId: item.Id, tag: tag, type: "Backdrop", maxWidth: 900)
         }
-        if item.Type == "Episode", let seriesId = item.SeriesId {
+        if item.kind == "Episode", let seriesId = item.SeriesId {
             return EmbyClient.shared.imageURL(itemId: seriesId, tag: nil, type: "Backdrop", maxWidth: 900)
         }
         return EmbyClient.shared.imageURL(itemId: item.Id, tag: item.ImageTags?["Primary"], type: "Primary", maxWidth: 900)
@@ -95,7 +95,7 @@ struct DetailView: View {
 
     private func metaLine(_ item: EmbyItem) -> String {
         var parts: [String] = []
-        if let type = item.Type {
+        if let type = item.kind {
             switch type {
             case "Movie": parts.append("电影")
             case "Series": parts.append("剧集")
@@ -106,10 +106,10 @@ struct DetailView: View {
         }
         if let year = item.ProductionYear { parts.append("\(year)") }
         if let rating = item.OfficialRating { parts.append(rating) }
-        if let runtime = item.resolvedRunTimeTicks, runtime > 0, item.Type != "Series" {
+        if let runtime = item.resolvedRunTimeTicks, runtime > 0, item.kind != "Series" {
             parts.append(runtime.durationText)
         }
-        if let seasonsCount = item.ChildCount, item.Type == "Series" {
+        if let seasonsCount = item.ChildCount, item.kind == "Series" {
             parts.append("\(seasonsCount) 季")
         }
         if let score = item.CommunityRating {
@@ -137,7 +137,7 @@ struct DetailView: View {
                 .foregroundStyle(.white)
             }
 
-            if item.isFolderLike, item.Type != "Season" {
+            if item.isFolderLike, item.kind != "Season" {
                 Button {
                     if let first = episodes.first { playing = first }
                 } label: {
@@ -153,7 +153,7 @@ struct DetailView: View {
     }
 
     private func primaryTarget(_ item: EmbyItem) -> EmbyItem? {
-        if item.Type == "Series" || item.Type == "Season" {
+        if item.kind == "Series" || item.kind == "Season" {
             return episodes.first
         }
         return item
@@ -161,7 +161,7 @@ struct DetailView: View {
 
     private func primaryButtonTitle(_ item: EmbyItem) -> String {
         guard let target = primaryTarget(item) else { return "暂无内容" }
-        if item.Type == "Series" || item.Type == "Season" {
+        if item.kind == "Series" || item.kind == "Season" {
             return target.hasResume ? "继续观看" : "播放第一集"
         }
         return target.hasResume ? "继续播放" : "播放"
@@ -261,7 +261,7 @@ struct DetailView: View {
             let detail = try await EmbyClient.shared.detail(id: itemId)
             item = detail
 
-            if detail.Type == "Series" {
+            if detail.kind == "Series" {
                 let seasonList = try await EmbyClient.shared.seasons(seriesId: detail.Id)
                 seasons = seasonList
                 let first = seasonList.first(where: { ($0.IndexNumber ?? 0) != 0 }) ?? seasonList.first
@@ -269,7 +269,7 @@ struct DetailView: View {
                 if let seasonId = first?.Id {
                     episodes = try await EmbyClient.shared.episodes(seriesId: detail.Id, seasonId: seasonId)
                 }
-            } else if detail.Type == "Season", let seriesId = detail.SeriesId {
+            } else if detail.kind == "Season", let seriesId = detail.SeriesId {
                 seasons = (try? await EmbyClient.shared.seasons(seriesId: seriesId)) ?? []
                 selectedSeasonId = detail.Id
                 episodes = try await EmbyClient.shared.episodes(seriesId: seriesId, seasonId: detail.Id)

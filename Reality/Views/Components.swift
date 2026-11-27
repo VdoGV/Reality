@@ -132,14 +132,14 @@ struct PosterCard: View {
     }
 
     private var posterURL: URL? {
-        if item.Type == "Episode", let seriesId = item.SeriesId {
+        if item.kind == "Episode", let seriesId = item.SeriesId {
             return EmbyClient.shared.imageURL(itemId: seriesId, tag: nil, maxWidth: 400)
         }
         return EmbyClient.shared.imageURL(itemId: item.Id, tag: item.ImageTags?["Primary"], maxWidth: 400)
     }
 
     private var subtitleText: String? {
-        if item.Type == "Episode" {
+        if item.kind == "Episode" {
             var parts: [String] = []
             if let season = item.ParentIndexNumber, let index = item.IndexNumber {
                 parts.append(String(format: "S%02dE%02d", season, index))

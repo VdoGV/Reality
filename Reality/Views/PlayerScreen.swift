@@ -118,7 +118,7 @@ struct PlayerScreen: View {
     }
 
     private var displayTitle: String {
-        if item.Type == "Episode" {
+        if item.kind == "Episode" {
             var parts: [String] = []
             if let season = item.ParentIndexNumber, let index = item.IndexNumber {
                 parts.append(String(format: "S%02dE%02d", season, index))

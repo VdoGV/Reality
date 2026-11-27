@@ -20,6 +20,8 @@ struct EmbyUser: Decodable, Identifiable {
     let Id: String
     let Name: String
     var PrimaryImageTag: String?
+
+    var id: String { Id }
 }
 
 // MARK: - 用户数据
@@ -35,7 +37,7 @@ struct UserData: Decodable {
 
 struct MediaStream: Decodable, Identifiable {
     let Index: Int
-    var Type: String          // Video / Audio / Subtitle / EmbeddedImage
+    var kind: String          // Video / Audio / Subtitle / EmbeddedImage
     var Codec: String?
     var Language: String?
     var DisplayTitle: String?
@@ -49,6 +51,17 @@ struct MediaStream: Decodable, Identifiable {
         if let display = DisplayTitle, !display.isEmpty { return display }
         return Language ?? Codec ?? "轨道 \(Index)"
     }
+
+    enum CodingKeys: String, CodingKey {
+        case Index
+        case kind = "Type"
+        case Codec
+        case Language
+        case DisplayTitle
+        case IsDefault
+        case IsExternal
+        case IsTextSubtitleStream
+    }
 }
 
 struct MediaSource: Decodable, Identifiable {
@@ -61,9 +74,11 @@ struct MediaSource: Decodable, Identifiable {
     var TranscodingUrl: String?
     var MediaStreams: [MediaStream]?
 
-    var videoStream: MediaStream? { MediaStreams?.first { $0.Type == "Video" } }
-    var audioStreams: [MediaStream] { MediaStreams?.filter { $0.Type == "Audio" } ?? [] }
-    var subtitleStreams: [MediaStream] { MediaStreams?.filter { $0.Type == "Subtitle" } ?? [] }
+    var id: String { Id }
+
+    var videoStream: MediaStream? { MediaStreams?.first { $0.kind == "Video" } }
+    var audioStreams: [MediaStream] { MediaStreams?.filter { $0.kind == "Audio" } ?? [] }
+    var subtitleStreams: [MediaStream] { MediaStreams?.filter { $0.kind == "Subtitle" } ?? [] }
 }
 
 // MARK: - 条目
@@ -71,7 +86,7 @@ struct MediaSource: Decodable, Identifiable {
 struct EmbyItem: Decodable, Identifiable {
     let Id: String
     let Name: String
-    var Type: String?
+    var kind: String?
     var Overview: String?
     var ProductionYear: Int?
     var RunTimeTicks: Int64?
@@ -91,8 +106,10 @@ struct EmbyItem: Decodable, Identifiable {
     var ChildCount: Int?
     var RecursiveItemCount: Int?
 
+    var id: String { Id }
+
     var isFolderLike: Bool {
-        ["Series", "Season", "BoxSet", "Folder", "CollectionFolder", "UserView"].contains(Type ?? "")
+        ["Series", "Season", "BoxSet", "Folder", "CollectionFolder", "UserView"].contains(kind ?? "")
     }
 
     var resolvedRunTimeTicks: Int64? { RunTimeTicks ?? MediaSources?.first?.RunTimeTicks }
@@ -101,6 +118,30 @@ struct EmbyItem: Decodable, Identifiable {
     var resumeTicks: Int64 { UserData?.PlaybackPositionTicks ?? 0 }
 
     var hasResume: Bool { resumeTicks > 5 * 10_000_000 }
+
+    enum CodingKeys: String, CodingKey {
+        case Id
+        case Name
+        case kind = "Type"
+        case Overview
+        case ProductionYear
+        case RunTimeTicks
+        case IndexNumber
+        case ParentIndexNumber
+        case SeriesName
+        case SeriesId
+        case SeasonId
+        case ParentId
+        case CollectionType
+        case ImageTags
+        case BackdropImageTags
+        case UserData
+        case MediaSources
+        case OfficialRating
+        case CommunityRating
+        case ChildCount
+        case RecursiveItemCount
+    }
 }
 
 struct ItemsResponse: Decodable {

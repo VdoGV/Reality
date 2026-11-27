@@ -146,7 +146,7 @@ final class PlaybackModel: ObservableObject {
     }
 
     private func loadNextEpisode(for item: EmbyItem) async {
-        guard item.Type == "Episode", let seriesId = item.SeriesId else {
+        guard item.kind == "Episode", let seriesId = item.SeriesId else {
             nextEpisode = nil
             return
         }
@@ -173,7 +173,7 @@ final class PlaybackModel: ObservableObject {
 
     func replay() async {
         guard let item = item else { return }
-        player.seek(to: .zero)
+        _ = await player.seek(to: .zero)
         player.play()
         ended = false
         startProgressLoop()
