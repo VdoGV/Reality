@@ -285,6 +285,19 @@ final class EmbyClient {
         return components.url
     }
 
+    func userImageURL(userId: String, maxWidth: Int = 240) -> URL? {
+        guard let session = store.session,
+              var components = URLComponents(string: session.serverURL + "/Users/\(userId)/Images/Primary") else {
+            return nil
+        }
+        components.queryItems = [
+            URLQueryItem(name: "maxWidth", value: "\(maxWidth)"),
+            URLQueryItem(name: "quality", value: "90"),
+            URLQueryItem(name: "api_key", value: session.accessToken)
+        ]
+        return components.url
+    }
+
     // MARK: - 播放
 
     func playbackInfo(itemId: String, startTicks: Int64) async throws -> PlaybackInfoResponse {

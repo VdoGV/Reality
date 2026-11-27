@@ -1,6 +1,9 @@
 import SwiftUI
 
-struct LoginView: View {
+struct AddServerSheet: View {
+    var onDone: (() -> Void)?
+
+    @Environment(\.dismiss) private var dismiss
     @State private var server = ""
     @State private var username = ""
     @State private var password = ""
@@ -11,18 +14,15 @@ struct LoginView: View {
         NavigationStack {
             Form {
                 Section {
-                    VStack(spacing: 14) {
+                    VStack(spacing: 10) {
                         Image(systemName: "play.rectangle.fill")
-                            .font(.system(size: 46))
+                            .font(.system(size: 40))
                             .foregroundStyle(Color.accentColor)
-                        Text("Reality")
-                            .font(.title2.bold())
-                        Text("连接你自己的 Emby 服务器")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                        Text("连接 Emby 服务器")
+                            .font(.headline)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
+                    .padding(.vertical, 12)
                     .listRowBackground(Color.clear)
                 }
 
@@ -40,7 +40,7 @@ struct LoginView: View {
                 } header: {
                     Text("服务器")
                 } footer: {
-                    Text("地址要带 http:// 或 https:// 以及端口号，例如 http://192.168.1.10:8096。局域网可直接用内网 IP。")
+                    Text("要带 http:// 或 https:// 和端口，例如 http://192.168.1.10:8096。局域网直接用内网 IP 即可。")
                 }
 
                 Section {
@@ -65,9 +65,20 @@ struct LoginView: View {
                             .foregroundStyle(.red)
                     }
                 }
+
+                Section {
+                    Text("只支持服务器地址 + 账号登录，不支持 Emby Connect 云账号。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
-            .navigationTitle("连接 Emby")
+            .navigationTitle("添加资源库")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") { dismiss() }
+                }
+            }
         }
     }
 
@@ -77,13 +88,17 @@ struct LoginView: View {
         let serverValue = server
         let userValue = username
         let passwordValue = password
+
         Task {
             do {
                 _ = try await EmbyClient.shared.login(server: serverValue, username: userValue, password: passwordValue)
+                connecting = false
+                onDone?()
+                dismiss()
             } catch {
                 errorText = error.localizedDescription
+                connecting = false
             }
-            connecting = false
         }
     }
 }

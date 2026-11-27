@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var store: SessionStore
-    @State private var showLogoutConfirm = false
 
     var body: some View {
         List {
@@ -31,20 +30,12 @@ struct SettingsView: View {
             }
 
             Section {
-                Button(role: .destructive) {
-                    showLogoutConfirm = true
-                } label: {
-                    Text("退出登录")
-                }
+                Text("退出登录在「我的」页面里。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
         .navigationTitle("设置")
         .navigationBarTitleDisplayMode(.large)
-        .confirmationDialog("确定退出当前账号？", isPresented: $showLogoutConfirm, titleVisibility: .visible) {
-            Button("退出登录", role: .destructive) {
-                EmbyClient.shared.logout()
-            }
-            Button("取消", role: .cancel) {}
-        }
     }
 }

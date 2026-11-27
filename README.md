@@ -8,8 +8,10 @@
 ## 功能
 
 - 账号密码登录任意 Emby 服务器（`/Users/AuthenticateByName`），token 存本地，失效自动回登录页
-- 首页：继续观看、各媒体库的最近添加
-- 媒体库：电影/剧集海报墙，分页加载，支持按名称 / 最近添加 / 年份排序
+- 底部四个导航：主页 / 我的 / 媒体库 / 设置
+- 媒体库：未连接时是「添加资源库」空状态；连接后是媒体库卡片墙，点进去是电影/剧集海报墙，分页加载，支持按名称 / 最近添加 / 年份排序
+- 主页：继续观看 + 各媒体库的最近添加
+- 我的：头像、账号、媒体库/待续播统计、退出登录
 - 详情：背景图、简介、季切换、分集列表、单集续播进度
 - 搜索：片名 / 剧名 / 单集，输入防抖
 - 播放：能直连就直连（`Static=true`），不行才走服务端 HLS 转码；系统播放器控件，支持 AirPlay / 画中画
@@ -70,7 +72,17 @@ Reality/
   Services/SessionStore.swift   # 会话与 deviceId 持久化
   Services/EmbyClient.swift     # Emby REST + 播放地址决策 + 进度上报
   Services/PlaybackModel.swift  # AVPlayer 生命周期、续播、下一集
-  Views/                        # 登录 / 首页 / 媒体库 / 详情 / 播放 / 搜索 / 设置
+  Views/
+    MainTabView.swift           # 四个底部导航 + 路由注册
+    HomeView.swift              # 主页
+    MediaLibraryTab.swift       # 媒体库（空状态 / 资源库卡片墙）
+    AddServerSheet.swift        # 添加服务器（Emby 登录）
+    ProfileView.swift           # 我的
+    LibraryView.swift           # 海报墙
+    DetailView.swift            # 详情 / 季集
+    PlayerScreen.swift          # 播放器
+    SearchView.swift            # 搜索
+    SettingsView.swift          # 设置
 ```
 
 ## 播放策略

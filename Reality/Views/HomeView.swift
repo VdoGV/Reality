@@ -1,6 +1,7 @@
 import SwiftUI
 
-struct HomeView: View {
+struct HomeTabView: View {
+    @Binding var selectedTab: MainTab
     @EnvironmentObject private var store: SessionStore
 
     @State private var libraries: [EmbyItem] = []
@@ -11,126 +12,141 @@ struct HomeView: View {
     @State private var playing: EmbyItem?
 
     var body: some View {
-        TabView {
-            NavigationStack {
-                ScrollView {
-                    content
-                }
-                .navigationTitle(store.session?.userName ?? "媒体库")
-                .navigationBarTitleDisplayMode(.large)
-                .navigationDestination(for: ItemRoute.self) { route in
-                    DetailView(itemId: route.id)
-                }
-                .navigationDestination(for: LibraryRoute.self) { route in
-                    LibraryView(libraryId: route.id, title: route.name)
-                }
-                .refreshable { await loadAll() }
+        Group {
+            if store.session == nil {
+                welcome
+            } else {
+                feed
             }
-            .tabItem { Label("媒体库", systemImage: "rectangle.stack.fill") }
-
-            NavigationStack {
-                SearchView()
-            }
-            .tabItem { Label("搜索", systemImage: "magnifyingglass") }
-
-            NavigationStack {
-                SettingsView()
-            }
-            .tabItem { Label("设置", systemImage: "gearshape.fill") }
         }
+        .navigationTitle("主页")
+        .navigationBarTitleDisplayMode(.large)
         .fullScreenCover(item: $playing) { item in
             PlayerScreen(item: item)
         }
         .task {
-            if libraries.isEmpty { await loadAll() }
+            if store.session != nil && libraries.isEmpty {
+                await loadAll()
+            }
         }
     }
 
+    // MARK: - 未连接
+
+    private var welcome: some View {
+        VStack(spacing: 16) {
+            Spacer()
+
+            Image(systemName: "play.square.stack")
+                .font(.system(size: 52, weight: .light))
+                .foregroundStyle(.secondary.opacity(0.6))
+
+            Text("还没有接入媒体服务器")
+                .font(.headline)
+
+            Text("连接 Emby 之后，这里会显示继续观看和最近更新。")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+
+            Button {
+                selectedTab = .library
+            } label: {
+                Text("去媒体库添加")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 22)
+                    .padding(.vertical, 12)
+                    .background(Color(.label), in: Capsule())
+                    .foregroundStyle(Color(.systemBackground))
+            }
+            .padding(.top, 6)
+
+            Spacer()
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - 内容
+
     @ViewBuilder
-    private var content: some View {
-        LazyVStack(alignment: .leading, spacing: 26) {
-            if loading && libraries.isEmpty {
-                ProgressView()
+    private var feed: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 26) {
+                if loading && libraries.isEmpty {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 70)
+                }
+
+                if let errorText {
+                    VStack(spacing: 10) {
+                        Label("加载失败", systemImage: "exclamationmark.triangle.fill")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.orange)
+                        Text(errorText)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                        Button("重试") { Task { await loadAll() } }
+                            .buttonStyle(.bordered)
+                    }
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 70)
-            }
-
-            if let errorText {
-                VStack(spacing: 10) {
-                    Label("加载失败", systemImage: "exclamationmark.triangle.fill")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.orange)
-                    Text(errorText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                    Button("重试") { Task { await loadAll() } }
-                        .buttonStyle(.bordered)
+                    .padding(.horizontal, 24)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 24)
-            }
 
-            if !resumeItems.isEmpty {
-                MediaRow(title: "继续观看", items: resumeItems) { item in
-                    playing = item
+                if !resumeItems.isEmpty {
+                    MediaRow(title: "继续观看", items: resumeItems) { item in
+                        playing = item
+                    }
                 }
-            }
 
-            ForEach(libraries) { library in
-                if let items = latestByLibrary[library.Id], !items.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Text(library.Name)
-                                .font(.headline)
-                            Spacer()
-                            NavigationLink(value: LibraryRoute(id: library.Id, name: library.Name)) {
-                                HStack(spacing: 2) {
-                                    Text("全部")
-                                    Image(systemName: "chevron.right").font(.caption2)
-                                }
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            }
-                        }
-                        .padding(.horizontal, 16)
-
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(alignment: .top, spacing: 14) {
-                                ForEach(items) { item in
-                                    NavigationLink(value: ItemRoute(id: item.Id)) {
-                                        PosterCard(item: item)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
+                ForEach(libraries) { library in
+                    if let items = latestByLibrary[library.Id], !items.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Text(library.Name)
+                                    .font(.headline)
+                                Spacer()
                                 NavigationLink(value: LibraryRoute(id: library.Id, name: library.Name)) {
-                                    VStack(spacing: 8) {
-                                        Image(systemName: "square.grid.2x2")
-                                            .font(.title2)
-                                        Text("查看全部").font(.caption2)
+                                    HStack(spacing: 2) {
+                                        Text("全部")
+                                        Image(systemName: "chevron.right").font(.caption2)
                                     }
-                                    .frame(width: 112, height: 112 * 1.46)
-                                    .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    .font(.caption)
                                     .foregroundStyle(.secondary)
                                 }
-                                .buttonStyle(.plain)
                             }
                             .padding(.horizontal, 16)
+
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(alignment: .top, spacing: 14) {
+                                    ForEach(items) { item in
+                                        NavigationLink(value: ItemRoute(id: item.Id)) {
+                                            PosterCard(item: item)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                            }
                         }
                     }
                 }
-            }
 
-            if !loading && !libraries.isEmpty && latestByLibrary.isEmpty {
-                Text("媒体库里还没有内容")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 40)
+                if !loading && libraries.isEmpty {
+                    Text("媒体库里还没有内容")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 40)
+                }
             }
+            .padding(.vertical, 12)
+            .padding(.bottom, 30)
         }
-        .padding(.vertical, 12)
-        .padding(.bottom, 30)
+        .refreshable { await loadAll() }
     }
 
     // MARK: - 数据

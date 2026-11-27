@@ -144,7 +144,7 @@ struct DetailView: View {
                     Image(systemName: "shuffle")
                         .font(.headline)
                         .frame(width: 48, height: 48)
-                        .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(Color(.secondarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .disabled(episodes.isEmpty)
             }
@@ -183,7 +183,7 @@ struct DetailView: View {
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
                             .background(
-                                isSelected ? Color.accentColor : Color.white.opacity(0.1),
+                                isSelected ? Color.accentColor : Color(.secondarySystemFill),
                                 in: Capsule()
                             )
                             .foregroundStyle(isSelected ? Color.white : Color.secondary)
